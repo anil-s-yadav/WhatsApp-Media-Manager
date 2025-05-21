@@ -1,10 +1,9 @@
-# WhatsApp Downloader
+# WhatsApp Downloader and Media Manager 
 
 A Flutter application that allows users to download WhatsApp profile photos, stories, and chat media.
 
 ## Features
 
-- Download WhatsApp profile photos
 - Download WhatsApp stories
 - Download media from WhatsApp chats
 - View downloaded media in a beautiful grid layout
@@ -67,6 +66,4 @@ The app requires the following permissions:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
