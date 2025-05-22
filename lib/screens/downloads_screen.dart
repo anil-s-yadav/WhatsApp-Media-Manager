@@ -31,7 +31,7 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     });
     try {
       final dir =
-          Directory('/storage/emulated/0/Download/WhatsApp Download Manager/');
+          Directory('/storage/emulated/0/Download/WhatsApp Media Manager/');
       if (await dir.exists()) {
         final files = dir.listSync().whereType<File>().toList();
         setState(() {

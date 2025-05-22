@@ -1,4 +1,10 @@
+import 'dart:developer';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -69,9 +75,17 @@ class WhatsAppService {
 
       print('Found WhatsApp media path: $basePath');
 
+      // Get user preferences
+      final prefs = await SharedPreferences.getInstance();
+      final showSentFiles = prefs.getBool('show_sent_files') ?? false;
+      final showPrivateFiles = prefs.getBool('show_private_files') ?? false;
+
       // Define WhatsApp media directories
       final directories = {
         'Images': '$basePath/WhatsApp Images',
+        if (showSentFiles) 'Sent Images': '$basePath/WhatsApp Images/Sent',
+        if (showPrivateFiles)
+          'Private Images': '$basePath/WhatsApp Images/Private',
         'Videos': '$basePath/WhatsApp Video',
         'Status': '$basePath/.Statuses',
         'Profile Photos': '$basePath/WhatsApp Profile Photos',
@@ -129,50 +143,48 @@ class WhatsAppService {
 
   Future<bool> copyToDownloads(Map<String, dynamic> media) async {
     try {
-      // Request storage permission
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        print('Storage permission not granted');
-        return false;
-      }
+      final permissionStatus = await Permission.manageExternalStorage.status;
 
-      // Get the downloads directory
-      String? downloadsPath;
-      if (Platform.isAndroid) {
-        downloadsPath = '/storage/emulated/0/Download/WhatsApp Downloads';
-      } else {
-        final directory = await getExternalStorageDirectory();
-        if (directory == null) {
-          print('Could not get external storage directory');
+      if (!permissionStatus.isGranted) {
+        final requestStatus = await Permission.manageExternalStorage.request();
+        if (!requestStatus.isGranted) {
+          log('Manage external storage permission not granted');
           return false;
         }
-        downloadsPath = '${directory.path}/WhatsApp Downloads';
       }
 
-      // Create the downloads directory if it doesn't exist
-      final downloadsDir = Directory(downloadsPath);
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
+      final sourcePath = media['path'];
+      final sourceFile = File(sourcePath);
 
-      // Copy the file
-      final sourceFile = File(media['path']);
       if (!await sourceFile.exists()) {
-        print('Source file does not exist: ${media['path']}');
+        debugPrint('Source file does not exist: $sourcePath');
         return false;
       }
 
+      // Read file as bytes
+      Uint8List fileBytes = await sourceFile.readAsBytes();
+
+      // Save to gallery using ImageGallerySaver
       final fileName =
           '${media['type']}_${DateTime.now().millisecondsSinceEpoch}.${media['extension']}';
-      final destinationPath = '$downloadsPath/$fileName';
-      final destinationFile = File(destinationPath);
 
-      // Copy the file
-      await sourceFile.copy(destinationPath);
-      print('File copied successfully to: $destinationPath');
-      return true;
+      final result = await ImageGallerySaver.saveFile(
+        sourcePath,
+        name: fileName,
+        isReturnPathOfIOS: false, // keep false for Android
+      );
+
+      debugPrint('Gallery save result: $result');
+
+      // Check if save was successful
+      if (result['isSuccess'] == true) {
+        return true;
+      } else {
+        debugPrint('Failed to save to gallery');
+        return false;
+      }
     } catch (e) {
-      print('Error copying file: $e');
+      debugPrint('Error copying file: $e');
       return false;
     }
   }
@@ -186,7 +198,7 @@ class WhatsAppService {
       }
       return false;
     } catch (e) {
-      print('Error deleting file: $e');
+      log('Error deleting file: $e');
       return false;
     }
   }

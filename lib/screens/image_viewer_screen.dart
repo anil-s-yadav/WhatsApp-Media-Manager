@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 
+import '../services/whatsapp_service.dart';
+
 class ImageViewerScreen extends StatefulWidget {
   final Map<String, dynamic> media;
 
@@ -172,9 +174,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                             width: 1,
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(Icons.zoom_out, color: Color(0xFF00A884)),
                             SizedBox(width: 8),
                             Text('Zoom Out',
@@ -203,9 +205,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                             width: 1,
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(Icons.zoom_in, color: Color(0xFF00A884)),
                             SizedBox(width: 8),
                             Text('Zoom In',
@@ -219,8 +221,10 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                     ),
                     InkWell(
                       onTap: () async {
-                        final result = await _saveMediaToCustomDownloads(
-                            widget.media['path'], widget.media['name']);
+                        final result = await WhatsAppService()
+                            .copyToDownloads(widget.media);
+                        // final result = await _saveMediaToCustomDownloads(
+                        //     widget.media['path'], widget.media['name']);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -244,9 +248,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                             width: 1,
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(Icons.save_alt, color: Color(0xFF00A884)),
                             SizedBox(width: 8),
                             Text('Save',
@@ -266,21 +270,5 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
         ),
       ),
     );
-  }
-
-  Future<bool> _saveMediaToCustomDownloads(
-      String sourcePath, String fileName) async {
-    try {
-      final directory = Directory(
-          '/storage/emulated/0/Download/Whats app download manager/save_here');
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
-      }
-      final newPath = '${directory.path}/$fileName';
-      await File(sourcePath).copy(newPath);
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 }

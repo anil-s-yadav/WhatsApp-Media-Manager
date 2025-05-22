@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
+import '../services/whatsapp_service.dart';
+
 class DocumentViewerScreen extends StatelessWidget {
   final Map<String, dynamic> media;
 
@@ -134,8 +136,8 @@ class DocumentViewerScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final result = await _saveMediaToCustomDownloads(
-                      media['path'], media['name']);
+                  final result = await WhatsAppService().copyToDownloads(media);
+                  // .saveMediaToCustomDownloads(media['path'], media['name']);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -178,21 +180,5 @@ class DocumentViewerScreen extends StatelessWidget {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  Future<bool> _saveMediaToCustomDownloads(
-      String sourcePath, String fileName) async {
-    try {
-      final directory = Directory(
-          '/storage/emulated/0/Download/Whats app download manager/save_here');
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
-      }
-      final newPath = '${directory.path}/$fileName';
-      await File(sourcePath).copy(newPath);
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 }
