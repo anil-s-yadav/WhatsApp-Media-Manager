@@ -96,6 +96,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
+                    duration: Durations.medium3,
                     content: Text(result
                         ? 'Video saved successfully!'
                         : 'Failed to save video.'),

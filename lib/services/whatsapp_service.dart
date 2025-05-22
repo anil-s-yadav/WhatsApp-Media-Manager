@@ -1,18 +1,15 @@
 import 'dart:developer';
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
+// import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:media_scanner/media_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class WhatsAppService {
-  final Dio _dio = Dio();
-
   bool isValidWhatsAppUrl(String url) {
     return url.contains('whatsapp.com') || url.contains('wa.me');
   }
@@ -34,15 +31,15 @@ class WhatsAppService {
     }
   }
 
-  Future<bool> downloadMedia(String url, String savePath) async {
-    try {
-      await _dio.download(url, savePath);
-      return true;
-    } catch (e) {
-      print('Error downloading media: $e');
-      return false;
-    }
-  }
+  // Future<bool> downloadMedia(String url, String savePath) async {
+  //   try {
+  //     await _dio.download(url, savePath);
+  //     return true;
+  //   } catch (e) {
+  //     print('Error downloading media: $e');
+  //     return false;
+  //   }
+  // }
 
   Future<String?> getWhatsAppMediaPath() async {
     if (Platform.isAndroid) {
@@ -143,12 +140,12 @@ class WhatsAppService {
 
   Future<bool> copyToDownloads(Map<String, dynamic> media) async {
     try {
-      final permissionStatus = await Permission.manageExternalStorage.status;
-
-      if (!permissionStatus.isGranted) {
-        final requestStatus = await Permission.manageExternalStorage.request();
+      // Request storage permissions
+      final storageStatus = await Permission.storage.status;
+      if (!storageStatus.isGranted) {
+        final requestStatus = await Permission.storage.request();
         if (!requestStatus.isGranted) {
-          log('Manage external storage permission not granted');
+          log('Storage permission not granted');
           return false;
         }
       }
@@ -161,30 +158,30 @@ class WhatsAppService {
         return false;
       }
 
-      // Read file as bytes
-      Uint8List fileBytes = await sourceFile.readAsBytes();
-
-      // Save to gallery using ImageGallerySaver
       final fileName =
           '${media['type']}_${DateTime.now().millisecondsSinceEpoch}.${media['extension']}';
+      final downloadsDir =
+          Directory('/storage/emulated/0/Download/WhatsApp Media Manager');
 
-      final result = await ImageGallerySaver.saveFile(
-        sourcePath,
-        name: fileName,
-        isReturnPathOfIOS: false, // keep false for Android
-      );
-
-      debugPrint('Gallery save result: $result');
-
-      // Check if save was successful
-      if (result['isSuccess'] == true) {
-        return true;
-      } else {
-        debugPrint('Failed to save to gallery');
-        return false;
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
       }
+
+      final targetPath = '${downloadsDir.path}/$fileName';
+      await sourceFile.copy(targetPath);
+      debugPrint('File copied successfully to: $targetPath');
+
+      // Simple media scan
+      try {
+        await MediaScanner.loadMedia();
+        debugPrint('Media scan completed');
+      } catch (e) {
+        debugPrint('Media scan error: $e');
+      }
+
+      return true;
     } catch (e) {
-      debugPrint('Error copying file: $e');
+      debugPrint('Error in copyToDownloads: $e');
       return false;
     }
   }

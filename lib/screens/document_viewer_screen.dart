@@ -141,6 +141,7 @@ class DocumentViewerScreen extends StatelessWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
+                        duration: Durations.medium3,
                         content: Text(result
                             ? 'Document saved successfully!'
                             : 'Failed to save document.'),

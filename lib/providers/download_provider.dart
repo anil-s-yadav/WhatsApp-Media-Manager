@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:dio/dio.dart';
+// import 'package:dio/dio.dart';
 
 class DownloadProvider with ChangeNotifier {
   bool _isLoading = false;
@@ -90,12 +90,11 @@ class DownloadProvider with ChangeNotifier {
     try {
       final directory = Directory(_downloadPath);
       if (await directory.exists()) {
-        _downloadedFiles =
-            await directory
-                .list()
-                .where((entity) => entity is File)
-                .map((entity) => entity.path)
-                .toList();
+        _downloadedFiles = await directory
+            .list()
+            .where((entity) => entity is File)
+            .map((entity) => entity.path)
+            .toList();
         notifyListeners();
       }
     } catch (e) {
@@ -104,31 +103,31 @@ class DownloadProvider with ChangeNotifier {
     }
   }
 
-  Future<void> downloadFile(String url, String fileName) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+  // Future<void> downloadFile(String url, String fileName) async {
+  //   try {
+  //     _isLoading = true;
+  //     _error = null;
+  //     notifyListeners();
 
-      final dio = Dio();
-      final filePath = '$_downloadPath/$fileName';
+  //     final dio = Dio();
+  //     final filePath = '$_downloadPath/$fileName';
 
-      await dio.download(
-        url,
-        filePath,
-        onReceiveProgress: (received, total) {
-          // You can add progress tracking here if needed
-        },
-      );
+  //     await dio.download(
+  //       url,
+  //       filePath,
+  //       onReceiveProgress: (received, total) {
+  //         // You can add progress tracking here if needed
+  //       },
+  //     );
 
-      await _loadDownloadedFiles();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  //     await _loadDownloadedFiles();
+  //   } catch (e) {
+  //     _error = e.toString();
+  //   } finally {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
 
   Future<void> deleteFile(String filePath) async {
     try {
