@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/howtouse.dart';
 import 'utils/providers/download_provider.dart';
 import 'screens/downloads_screen.dart';
 import 'screens/settings_screen.dart';
@@ -28,13 +29,6 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF25D366),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
         home: const HomeScreen(),
         routes: {
           '/home': (context) => const HomeScreen(),
@@ -42,6 +36,7 @@ class MyApp extends StatelessWidget {
           '/settings': (context) => const SettingsScreen(),
           '/about': (context) => const AboutScreen(),
           '/privacy': (context) => const PrivacyPolicyScreen(),
+          '/howto': (context) => const HowToUseScreen(),
         },
       ),
     );

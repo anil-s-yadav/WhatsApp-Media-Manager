@@ -344,13 +344,27 @@ class _HomeScreenState extends State<HomeScreen>
                     decoration: BoxDecoration(
                       color: Color(0xFF00A884),
                     ),
-                    child: Text(
-                      'WhatsApp Downloader',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Column(
+                      // mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'WhatsApp Downloader',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "v 1.0.1(1)",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      ],
                     ),
                   ),
                   ListTile(
@@ -379,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen>
                         style: TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.pushNamed(context, '/settings');
+                      Navigator.pushNamed(context, '/howto');
                     },
                   ),
                   ListTile(
