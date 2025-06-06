@@ -36,20 +36,30 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _initializeApp() async {
+    setState(() {
+      _isLoading = true;
+    });
     final hasPermissions = await _checkPermission();
     if (hasPermissions && mounted) {
       await _loadMediaFiles();
+    } else {
+      setState(() {
+        _isLoading = false; // ensures UI unblocks
+      });
     }
   }
 
   Future<bool> _checkPermission() async {
     try {
-      // First check manage external storage permission
+      // ✅ If already granted, return early
+      if (await Permission.manageExternalStorage.isGranted) {
+        return true;
+      }
+
+      // Ask for manageExternalStorage if denied
       if (await Permission.manageExternalStorage.isDenied) {
         final manageStorage = await Permission.manageExternalStorage.request();
-        if (manageStorage.isGranted) {
-          return true;
-        } else {
+        if (!manageStorage.isGranted) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -73,15 +83,13 @@ class _HomeScreenState extends State<HomeScreen>
       final allGranted = statuses.values
           .every((status) => status.isGranted || status.isLimited);
 
-      if (!allGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('All permissions are required to use this app'),
-              backgroundColor: Colors.grey,
-            ),
-          );
-        }
+      if (!allGranted && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All permissions are required to use this app'),
+            backgroundColor: Colors.grey,
+          ),
+        );
       }
 
       return allGranted;
