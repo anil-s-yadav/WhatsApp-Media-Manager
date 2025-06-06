@@ -54,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           SwitchListTile(
-            title: const Text('Show Private Files',
+            title: const Text('Show Deleted Files',
                 style: TextStyle(color: Colors.white)),
             value: _showPrivateFiles,
             onChanged: (value) {
