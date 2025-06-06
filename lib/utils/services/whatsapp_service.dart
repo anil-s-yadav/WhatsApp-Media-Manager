@@ -140,16 +140,6 @@ class WhatsAppService {
 
   Future<bool> copyToDownloads(Map<String, dynamic> media) async {
     try {
-      // Request storage permissions
-      final storageStatus = await Permission.storage.status;
-      if (!storageStatus.isGranted) {
-        final requestStatus = await Permission.storage.request();
-        if (!requestStatus.isGranted) {
-          log('Storage permission not granted');
-          return false;
-        }
-      }
-
       final sourcePath = media['path'];
       final sourceFile = File(sourcePath);
 
@@ -158,23 +148,29 @@ class WhatsAppService {
         return false;
       }
 
-      final fileName =
-          '${media['type']}_${DateTime.now().millisecondsSinceEpoch}.${media['extension']}';
+      // Create a more descriptive filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final originalName = media['name'];
+      final extension = media['extension'];
+      final fileName = '${originalName.split('.').first}_$timestamp.$extension';
+
+      // Create downloads directory if it doesn't exist
       final downloadsDir =
           Directory('/storage/emulated/0/Download/WhatsApp Media Manager');
-
       if (!await downloadsDir.exists()) {
         await downloadsDir.create(recursive: true);
       }
 
       final targetPath = '${downloadsDir.path}/$fileName';
+
+      // Copy the file
       await sourceFile.copy(targetPath);
       debugPrint('File copied successfully to: $targetPath');
 
-      // Simple media scan
+      // Scan the file to make it visible in gallery/files
       try {
-        await MediaScanner.loadMedia();
-        debugPrint('Media scan completed');
+        await MediaScanner.loadMedia(path: targetPath);
+        debugPrint('Media scan completed for: $targetPath');
       } catch (e) {
         debugPrint('Media scan error: $e');
       }

@@ -231,7 +231,6 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    duration: Durations.medium3,
                                     content: Text(result
                                         ? 'Image saved successfully!'
                                         : 'Failed to save image.'),
