@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 
-import '../services/whatsapp_service.dart';
+import '../utils/services/whatsapp_service.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   final Map<String, dynamic> media;
+  final bool isMyDownloadPage;
 
-  const ImageViewerScreen({super.key, required this.media});
+  const ImageViewerScreen(
+      {super.key, required this.media, this.isMyDownloadPage = false});
 
   @override
   State<ImageViewerScreen> createState() => _ImageViewerScreenState();
@@ -219,50 +221,53 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                         ),
                       ),
                     ),
-                    InkWell(
-                      onTap: () async {
-                        final result = await WhatsAppService()
-                            .copyToDownloads(widget.media);
-                        // final result = await _saveMediaToCustomDownloads(
-                        //     widget.media['path'], widget.media['name']);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              duration: Durations.medium3,
-                              content: Text(result
-                                  ? 'Image saved successfully!'
-                                  : 'Failed to save image.'),
-                              backgroundColor:
-                                  result ? Colors.green : Colors.red,
+                    !widget.isMyDownloadPage
+                        ? InkWell(
+                            onTap: () async {
+                              final result = await WhatsAppService()
+                                  .copyToDownloads(widget.media);
+                              // final result = await _saveMediaToCustomDownloads(
+                              //     widget.media['path'], widget.media['name']);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    duration: Durations.medium3,
+                                    content: Text(result
+                                        ? 'Image saved successfully!'
+                                        : 'Failed to save image.'),
+                                    backgroundColor:
+                                        result ? Colors.green : Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00A884).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF00A884),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.save_alt,
+                                      color: Color(0xFF00A884)),
+                                  SizedBox(width: 8),
+                                  Text('Save',
+                                      style: TextStyle(
+                                          color: Color(0xFF00A884),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500)),
+                                ],
+                              ),
                             ),
-                          );
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00A884).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF00A884),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.save_alt, color: Color(0xFF00A884)),
-                            SizedBox(width: 8),
-                            Text('Save',
-                                style: TextStyle(
-                                    color: Color(0xFF00A884),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                    ),
+                          )
+                        : const SizedBox.shrink(),
                   ],
                 ),
               ),

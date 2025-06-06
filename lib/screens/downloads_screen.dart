@@ -66,14 +66,16 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ImageViewerScreen(media: media),
+          builder: (context) =>
+              ImageViewerScreen(media: media, isMyDownloadPage: true),
         ),
       );
-    } else if (['mp4'].contains(extension)) {
+    } else if (['mp4'].contains(extension) || ['mkv'].contains(extension)) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MediaViewerScreen(media: media),
+          builder: (context) =>
+              MediaViewerScreen(media: media, isMyDownloadPage: true),
         ),
       );
     } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
@@ -81,14 +83,14 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DocumentViewerScreen(media: media),
+          builder: (context) =>
+              DocumentViewerScreen(media: media, isMyDownloadPage: true),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unsupported file type.'),
-          backgroundColor: Colors.red,
         ),
       );
     }
@@ -100,6 +102,17 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
     if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
         .contains(extension)) return 'Documents';
     return 'Other';
+  }
+
+  IconData _getIcon(String extension) {
+    if (['jpg', 'jpeg', 'png', 'gif'].contains(extension)) return Icons.image;
+    if (['mp4'].contains(extension)) return Icons.video_file;
+    if (['pdf'].contains(extension)) return Icons.picture_as_pdf;
+    if (['doc', 'docx'].contains(extension)) return Icons.description;
+    if (['xls', 'xlsx'].contains(extension)) return Icons.table_chart;
+    if (['ppt', 'pptx'].contains(extension)) return Icons.slideshow;
+    if (['txt'].contains(extension)) return Icons.text_snippet;
+    return Icons.insert_drive_file;
   }
 
   @override
@@ -149,26 +162,20 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                             .replaceFirst('.', '')
                             .toLowerCase();
                         final icon = _getIcon(extension);
-                        final media = {
-                          'path': file.path,
-                          'name': p.basename(file.path),
-                          'extension': extension,
-                          'type': _getType(extension),
-                          'size': file.lengthSync(),
-                        };
                         final isImage =
                             ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
-                        final isDocument = [
-                          'pdf',
-                          'doc',
-                          'docx',
-                          'xls',
-                          'xlsx',
-                          'ppt',
-                          'pptx',
-                          'txt'
-                        ].contains(extension);
-                        final isVideo = ['mp4'].contains(extension);
+                        // final isDocument = [
+                        //   'pdf',
+                        //   'doc',
+                        //   'docx',
+                        //   'xls',
+                        //   'xlsx',
+                        //   'ppt',
+                        //   'pptx',
+                        //   'txt'
+                        // ].contains(extension);
+                        // final isVideo = ['mp4'].contains(extension);
+
                         return GestureDetector(
                           onTap: () => _openFile(file),
                           onLongPress: () {
@@ -198,86 +205,28 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                                             file,
                                             fit: BoxFit.cover,
                                           )
-                                        : isDocument
-                                            ? Container(
-                                                color: const Color(0xFF2A3942),
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      _getIcon(extension),
-                                                      size: 48,
-                                                      color: const Color(
-                                                          0xFF00A884),
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      extension.toUpperCase(),
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : Stack(
-                                                fit: StackFit.expand,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.video_file,
-                                                    size: 48,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  Positioned(
-                                                    bottom: 8,
-                                                    right: 8,
-                                                    child: Container(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              4),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black54,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(4),
-                                                      ),
-                                                      child: const Icon(
-                                                        Icons.play_arrow,
-                                                        color: Colors.white,
-                                                        size: 20,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                        : Container(
+                                            color: const Color(0xFF111B21),
+                                            child: Center(
+                                              child: Icon(
+                                                icon,
+                                                size: 48,
+                                                color: Colors.white70,
                                               ),
+                                            ),
+                                          ),
                                   ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p.basename(file.path),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${_getType(extension)} • ${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    p.basename(file.path),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -287,32 +236,5 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                       },
                     ),
     );
-  }
-
-  IconData _getIcon(String extension) {
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return Icons.image;
-      case 'mp4':
-        return Icons.videocam;
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'xls':
-      case 'xlsx':
-        return Icons.table_chart;
-      case 'ppt':
-      case 'pptx':
-        return Icons.slideshow;
-      case 'txt':
-        return Icons.text_snippet;
-      default:
-        return Icons.insert_drive_file;
-    }
   }
 }

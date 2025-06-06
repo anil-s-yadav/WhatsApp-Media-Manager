@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
-import 'providers/download_provider.dart';
+import 'utils/providers/download_provider.dart';
 import 'screens/downloads_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
@@ -37,6 +37,7 @@ class MyApp extends StatelessWidget {
         ),
         home: const HomeScreen(),
         routes: {
+          '/home': (context) => const HomeScreen(),
           '/downloads': (context) => const MyDownloadsScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/about': (context) => const AboutScreen(),

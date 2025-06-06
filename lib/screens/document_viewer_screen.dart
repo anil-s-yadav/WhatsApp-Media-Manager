@@ -5,12 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
-import '../services/whatsapp_service.dart';
+import '../utils/services/whatsapp_service.dart';
 
 class DocumentViewerScreen extends StatelessWidget {
   final Map<String, dynamic> media;
+  final bool isMyDownloadPage;
 
-  const DocumentViewerScreen({super.key, required this.media});
+  const DocumentViewerScreen(
+      {super.key, required this.media, this.isMyDownloadPage = false});
 
   Future<void> _openDocument(BuildContext context) async {
     try {
@@ -129,46 +131,50 @@ class DocumentViewerScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(20),
-            margin: const EdgeInsets.only(bottom: 25),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await WhatsAppService().copyToDownloads(media);
-                  // .saveMediaToCustomDownloads(media['path'], media['name']);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        duration: Durations.medium3,
-                        content: Text(result
-                            ? 'Document saved successfully!'
-                            : 'Failed to save document.'),
-                        backgroundColor: result ? Colors.green : Colors.red,
+          !isMyDownloadPage
+              ? Container(
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 25),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final result =
+                            await WhatsAppService().copyToDownloads(media);
+                        // .saveMediaToCustomDownloads(media['path'], media['name']);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              duration: Durations.medium3,
+                              content: Text(result
+                                  ? 'Document saved successfully!'
+                                  : 'Failed to save document.'),
+                              backgroundColor:
+                                  result ? Colors.green : Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00A884),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00A884),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                      icon: const Icon(Icons.save_alt, color: Colors.white),
+                      label: const Text(
+                        'Save to Downloads',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                icon: const Icon(Icons.save_alt, color: Colors.white),
-                label: const Text(
-                  'Save to Downloads',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ),
+                )
+              : const SizedBox.shrink(),
         ],
       ),
     );

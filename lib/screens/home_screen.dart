@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/whatsapp_service.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../utils/services/whatsapp_service.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'media_viewer_screen.dart';
@@ -25,16 +24,78 @@ class _HomeScreenState extends State<HomeScreen>
   String? _error;
   String _selectedType = 'All';
   late TabController _tabController;
-  int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _loadMediaFiles();
     _tabController = TabController(length: 5, vsync: this);
     _searchController.addListener(_onSearchChanged);
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    final hasPermissions = await _checkPermission();
+    if (hasPermissions && mounted) {
+      await _loadMediaFiles();
+    }
+  }
+
+  Future<bool> _checkPermission() async {
+    try {
+      // First check manage external storage permission
+      if (await Permission.manageExternalStorage.isDenied) {
+        final manageStorage = await Permission.manageExternalStorage.request();
+        if (manageStorage.isGranted) {
+          return true;
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Storage access permission is required'),
+                backgroundColor: Colors.grey,
+              ),
+            );
+          }
+          return false;
+        }
+      }
+
+      // Then check other permissions
+      final statuses = await [
+        Permission.storage,
+        Permission.mediaLibrary,
+        Permission.audio,
+        Permission.videos,
+      ].request();
+
+      final allGranted = statuses.values
+          .every((status) => status.isGranted || status.isLimited);
+
+      if (!allGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('All permissions are required to use this app'),
+              backgroundColor: Colors.grey,
+            ),
+          );
+        }
+      }
+
+      return allGranted;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error checking permissions: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
   }
 
   @override
@@ -52,16 +113,20 @@ class _HomeScreenState extends State<HomeScreen>
 
     try {
       final files = await _whatsappService.getWhatsAppMedia();
-      setState(() {
-        _mediaFiles = files;
-        _filteredMediaFiles = files;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _mediaFiles = files;
+          _filteredMediaFiles = files;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -396,6 +461,24 @@ class _HomeScreenState extends State<HomeScreen>
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadMediaFiles,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Text(
+                              'Reload Media',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ],

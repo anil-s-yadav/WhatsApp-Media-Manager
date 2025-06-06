@@ -6,15 +6,14 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-import '../services/whatsapp_service.dart';
+import '../utils/services/whatsapp_service.dart';
 
 class MediaViewerScreen extends StatefulWidget {
   final Map<String, dynamic> media;
+  final bool isMyDownloadPage;
 
-  const MediaViewerScreen({
-    super.key,
-    required this.media,
-  });
+  const MediaViewerScreen(
+      {super.key, required this.media, this.isMyDownloadPage = false});
 
   @override
   State<MediaViewerScreen> createState() => _MediaViewerScreenState();
@@ -87,27 +86,29 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                 color: Color.fromARGB(255, 5, 77, 31),
                 size: 20,
               )),
-          TextButton.icon(
-            onPressed: () async {
-              final result =
-                  await WhatsAppService().copyToDownloads(widget.media);
-              // final result = await _saveMediaToCustomDownloads(
-              //     widget.media['path'], widget.media['name']);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    duration: Durations.medium3,
-                    content: Text(result
-                        ? 'Video saved successfully!'
-                        : 'Failed to save video.'),
-                    backgroundColor: result ? Colors.green : Colors.red,
-                  ),
-                );
-              }
-            },
-            label: const Text('Save to Downloads'),
-            icon: const Icon(Icons.download),
-          )
+          !widget.isMyDownloadPage
+              ? TextButton.icon(
+                  onPressed: () async {
+                    final result =
+                        await WhatsAppService().copyToDownloads(widget.media);
+                    // final result = await _saveMediaToCustomDownloads(
+                    //     widget.media['path'], widget.media['name']);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          duration: Durations.medium3,
+                          content: Text(result
+                              ? 'Video saved successfully!'
+                              : 'Failed to save video.'),
+                          backgroundColor: result ? Colors.green : Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  label: const Text('Save to Downloads'),
+                  icon: const Icon(Icons.download),
+                )
+              : const SizedBox.shrink()
         ],
       ),
       body: Stack(
