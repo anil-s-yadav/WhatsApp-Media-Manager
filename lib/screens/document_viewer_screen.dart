@@ -1,53 +1,46 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:pdfx/pdfx.dart';
 
 import '../utils/services/whatsapp_service.dart';
 
-class DocumentViewerScreen extends StatelessWidget {
+class DocumentViewerScreen extends StatefulWidget {
   final Map<String, dynamic> media;
   final bool isMyDownloadPage;
 
   const DocumentViewerScreen(
       {super.key, required this.media, this.isMyDownloadPage = false});
 
-  Future<void> _openDocument(BuildContext context) async {
-    try {
-      final file = File(media['path']);
-      if (!await file.exists()) {
-        throw Exception('File not found');
-      }
+  @override
+  State<DocumentViewerScreen> createState() => _DocumentViewerScreenState();
+}
 
-      final tempDir = await getTemporaryDirectory();
-      final tempPath = path.join(tempDir.path, media['name']);
-      final tempFile = await file.copy(tempPath);
+class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
+  PdfControllerPinch? _pdfController;
+  bool _pdfError = false;
 
-      final uri = Uri.file(tempFile.path);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No app found to open this file'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening file: $e'),
-            backgroundColor: Colors.red,
-          ),
+  bool get _isPdf =>
+      (widget.media['extension']?.toString().toLowerCase() == 'pdf');
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isPdf) {
+      try {
+        _pdfController = PdfControllerPinch(
+          document: PdfDocument.openFile(widget.media['path']),
+          initialPage: 1,
         );
+      } catch (_) {
+        _pdfError = true;
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _pdfController?.dispose();
+    super.dispose();
   }
 
   IconData _getDocumentIcon(String extension) {
@@ -77,7 +70,7 @@ class DocumentViewerScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF202C33),
         title: Text(
-          media['name'],
+          widget.media['name'],
           style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -90,7 +83,7 @@ class DocumentViewerScreen extends StatelessWidget {
             icon: const Icon(Icons.share, color: Colors.white),
             onPressed: () async {
               await Share.shareXFiles(
-                [XFile(media['path'])],
+                [XFile(widget.media['path'])],
                 text: 'Check out this document!',
               );
             },
@@ -100,38 +93,51 @@ class DocumentViewerScreen extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _getDocumentIcon(media['extension']),
-                    size: 100,
-                    color: const Color(0xFF00A884),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    media['name'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
+            child: _isPdf
+                ? (_pdfError || _pdfController == null)
+                    ? const Center(
+                        child: Text(
+                          'Unable to open PDF',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      )
+                    : PdfViewPinch(
+                        controller: _pdfController!,
+                        backgroundDecoration:
+                            const BoxDecoration(color: Color(0xFF111B21)),
+                      )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _getDocumentIcon(widget.media['extension']),
+                          size: 100,
+                          color: const Color(0xFF00A884),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          widget.media['name'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '${widget.media['type']} • ${_formatFileSize(widget.media['size'])}',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${media['type']} • ${_formatFileSize(media['size'])}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
-          !isMyDownloadPage
+          !widget.isMyDownloadPage
               ? Container(
                   padding: const EdgeInsets.all(20),
                   margin: const EdgeInsets.only(bottom: 25),
@@ -139,9 +145,8 @@ class DocumentViewerScreen extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final result =
-                            await WhatsAppService().copyToDownloads(media);
-                        // .saveMediaToCustomDownloads(media['path'], media['name']);
+                        final result = await WhatsAppService()
+                            .copyToDownloads(widget.media);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

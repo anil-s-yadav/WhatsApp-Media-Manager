@@ -7,6 +7,8 @@ import 'media_viewer_screen.dart';
 import 'image_viewer_screen.dart';
 import 'document_viewer_screen.dart';
 import 'file_info_screen.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -449,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
                         child: Text(
-                          _error!,
+                          _error ?? "",
                           style: const TextStyle(color: Colors.red),
                           textAlign: TextAlign.center,
                         ),
@@ -458,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ElevatedButton(
                         onPressed: _loadMediaFiles,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00A884),
+                          backgroundColor: Color(0xFF00A884),
                         ),
                         child: const Text('Retry'),
                       ),
@@ -560,26 +562,6 @@ class _HomeScreenState extends State<HomeScreen>
                       },
                     ),
     );
-  }
-
-  IconData _getDocumentIcon(String extension) {
-    switch (extension.toLowerCase()) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'xls':
-      case 'xlsx':
-        return Icons.table_chart;
-      case 'ppt':
-      case 'pptx':
-        return Icons.slideshow;
-      case 'txt':
-        return Icons.text_snippet;
-      default:
-        return Icons.insert_drive_file;
-    }
   }
 }
 
@@ -688,6 +670,7 @@ class MediaGridItem extends StatelessWidget {
       'txt'
     ].contains(media['extension']);
     final isVideo = ['mp4'].contains(media['extension']);
+    // final isPdf = media['extension'] == 'pdf';
 
     return GestureDetector(
       onTap: onTap,
@@ -711,36 +694,11 @@ class MediaGridItem extends StatelessWidget {
                         fit: BoxFit.cover,
                         gaplessPlayback: true,
                       )
-                    : isDocument
-                        ? Container(
-                            color: const Color(0xFF2A3942),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _getDocumentIcon(media['extension']),
-                                  size: 48,
-                                  color: const Color(0xFF00A884),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  media['extension'].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Stack(
+                    : isVideo
+                        ? Stack(
                             fit: StackFit.expand,
                             children: [
-                              const Icon(
-                                Icons.video_file,
-                                size: 48,
-                                color: Colors.white70,
-                              ),
+                              VideoThumbnailWidget(videoPath: media['path']),
                               Positioned(
                                 bottom: 8,
                                 right: 8,
@@ -758,7 +716,51 @@ class MediaGridItem extends StatelessWidget {
                                 ),
                               ),
                             ],
-                          ),
+                          )
+                        : isDocument
+                            ? (media['extension'] == 'pdf'
+                                ? Container(
+                                    color: const Color(0xFF2A3942),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Color(0xFF00A884),
+                                        size: 48,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: const Color(0xFF2A3942),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          _getDocumentIcon(media['extension']),
+                                          size: 48,
+                                          color: const Color(0xFF00A884),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          media['extension'].toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ))
+                            : Container(
+                                color: const Color(0xFF2A3942),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.insert_drive_file,
+                                    color: Colors.white70,
+                                    size: 48,
+                                  ),
+                                ),
+                              ),
               ),
             ),
             Padding(
@@ -808,7 +810,84 @@ class MediaGridItem extends StatelessWidget {
       case 'txt':
         return Icons.text_snippet;
       default:
-        return Icons.insert_drive_file;
+        return Icons.videocam;
     }
   }
 }
+
+class VideoThumbnailWidget extends StatefulWidget {
+  final String videoPath;
+
+  const VideoThumbnailWidget({super.key, required this.videoPath});
+
+  @override
+  State<VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
+  static final Map<String, String> _thumbCache = {};
+  late Future<String?> _thumbPathFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _thumbPathFuture = _getOrCreateThumb(widget.videoPath);
+  }
+
+  Future<String?> _getOrCreateThumb(String videoPath) async {
+    final cached = _thumbCache[videoPath];
+    if (cached != null && await File(cached).exists()) {
+      return cached;
+    }
+    final tempDir = await getTemporaryDirectory();
+    final thumbPath = await VideoThumbnail.thumbnailFile(
+      video: videoPath,
+      imageFormat: ImageFormat.JPEG,
+      timeMs: 1000,
+      maxWidth: 512,
+      quality: 70,
+      // Provide directory; package will create the file under this folder
+      thumbnailPath: tempDir.path,
+    );
+    if (thumbPath != null) {
+      _thumbCache[videoPath] = thumbPath;
+    }
+    return thumbPath;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _thumbPathFuture,
+      builder: (context, snapshot) {
+        final path = snapshot.data;
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Icon(
+              Icons.video_file,
+              color: Colors.white54,
+              size: 48,
+            ),
+          );
+        }
+        if (path == null || !File(path).existsSync()) {
+          return const Center(
+            child: Icon(
+              Icons.video_file,
+              color: Colors.white54,
+              size: 48,
+            ),
+          );
+        }
+        return Image.file(
+          File(path),
+          fit: BoxFit.cover,
+          cacheWidth: 512,
+          filterQuality: FilterQuality.low,
+        );
+      },
+    );
+  }
+}
+
+// PDF thumbnails are now working with styled icons

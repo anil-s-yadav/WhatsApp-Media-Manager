@@ -1,4 +1,4 @@
-package com.example.whats_download
+package com.legendarysoftware.wdm
 
 import android.Manifest
 import android.content.pm.PackageManager

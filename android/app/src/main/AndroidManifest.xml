@@ -12,7 +12,7 @@
 
     <application
         android:enableOnBackInvokedCallback="true"
-        android:label="whats_download"
+        android:label="WhatsApp Media Manager"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"
